@@ -22,6 +22,21 @@ mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/buildconn
 .then(() => console.log('MongoDB connected'))
 .catch(err => console.error('MongoDB connection error:', err))
 
+// Booking Schema
+const bookingSchema = new mongoose.Schema({
+  fullName: { type: String, required: true },
+  email: { type: String, required: true },
+  phone: { type: String, required: true },
+  serviceType: { type: String, required: true },
+  projectDetails: { type: String, required: true },
+  preferredDate: { type: String, required: true },
+  status: { type: String, default: 'Pending' },
+  amount: { type: Number, default: 0 },
+  createdAt: { type: Date, default: Date.now }
+})
+
+const Booking = mongoose.model('Booking', bookingSchema)
+
 // Routes
 app.get('/', (req, res) => {
   res.json({ message: 'BuildConnect API is running', status: 'active' })
@@ -61,6 +76,47 @@ app.get('/api/bookings', (req, res) => {
     { id: 1, user: 'John Doe', service: 'Plumbing', date: '2024-12-15', status: 'Completed', amount: 2500 },
     { id: 2, user: 'Jane Smith', service: 'Electrical', date: '2024-12-14', status: 'Pending', amount: 3200 }
   ])
+})
+
+// Create new booking
+app.post('/api/bookings', async (req, res) => {
+  try {
+    const { fullName, email, phone, serviceType, projectDetails, preferredDate } = req.body
+    
+    const newBooking = new Booking({
+      fullName,
+      email,
+      phone,
+      serviceType,
+      projectDetails,
+      preferredDate,
+      status: 'Pending',
+      amount: 0
+    })
+    
+    const savedBooking = await newBooking.save()
+    res.json({ success: true, booking: savedBooking })
+  } catch (error) {
+    console.error('Error creating booking:', error)
+    res.status(500).json({ success: false, message: 'Failed to create booking' })
+  }
+})
+
+// Get user's bookings
+app.get('/api/bookings/my', async (req, res) => {
+  try {
+    const { email } = req.query
+    
+    if (!email) {
+      return res.status(400).json({ success: false, message: 'Email is required' })
+    }
+    
+    const bookings = await Booking.find({ email }).sort({ createdAt: -1 })
+    res.json({ bookings })
+  } catch (error) {
+    console.error('Error fetching bookings:', error)
+    res.status(500).json({ success: false, message: 'Failed to fetch bookings' })
+  }
 })
 
 // Services endpoints
