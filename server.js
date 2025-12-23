@@ -106,12 +106,9 @@ app.post('/api/bookings', async (req, res) => {
 app.get('/api/bookings/my', async (req, res) => {
   try {
     const { email } = req.query
+        const query = email ? { email } : {}
     
-    if (!email) {
-      return res.status(400).json({ success: false, message: 'Email is required' })
-    }
-    
-    const bookings = await Booking.find({ email }).sort({ createdAt: -1 })
+    const bookings = await Booking.find(query }).sort({ createdAt: -1 })
     res.json({ bookings })
   } catch (error) {
     console.error('Error fetching bookings:', error)
